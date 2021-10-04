@@ -1,4 +1,3 @@
-
 extern crate chrono;
 use chrono::offset::Utc;
 use chrono::DateTime;
@@ -6,20 +5,23 @@ use std::time::SystemTime;
 
 use crate::stuff::discord;
 
-
-static mut NOW_PLAYING: String = String::new();
-
+use crate::{CURRENT_CHANNEL, NOW_PLAYING};
 
 pub async fn init_channel(channel_id: String) -> Option<String> {
     let chn = resolve_channel(&channel_id).await;
-    
+
     if chn.is_none() {
         println!("Channel {} not found", channel_id);
         return None;
     }
-    
+
     let request_url = format!("https://api.reyfm.de/v4/channel?chn={}", chn.unwrap());
-    let response = reqwest::get(&request_url).await.unwrap().json::<serde_json::Value>().await.unwrap();
+    let response = reqwest::get(&request_url)
+        .await
+        .unwrap()
+        .json::<serde_json::Value>()
+        .await
+        .unwrap();
     let _channel_description = response["channel"]["description"].as_str().unwrap();
     let channel_name = response["channel"]["name"].as_str().unwrap();
     let _stream_url = response["channel"]["stream_urls"]["high"].as_str().unwrap();
@@ -27,31 +29,40 @@ pub async fn init_channel(channel_id: String) -> Option<String> {
     let song_artist = response["channel"]["now"]["artist"].as_str().unwrap();
     // get the stream url
     let stream_url = response["channel"]["stream_urls"]["high"].as_str().unwrap();
-    discord::init_presence(channel_name.to_owned(), song_artist.to_owned()).await;
+    discord::init_presence(
+        channel_name.to_owned(),
+        format!("{} - {}", song_artist, song_title),
+    )
+    .await;
 
     let system_time = SystemTime::now();
     let datetime: DateTime<Utc> = system_time.into();
     println!(
-        "[{}] -> [REYFM #{}] \n {} - {}", 
-        datetime.format("%d/%m/%Y %T"), 
-        channel_id, 
-        song_artist, 
+        "[{}] -> [REYFM #{}] \n {} - {}",
+        datetime.format("%d/%m/%Y %T"),
+        channel_id,
+        song_artist,
         song_title
     );
 
     unsafe {
         NOW_PLAYING = format!("{} - {}", song_artist, song_title);
+        CURRENT_CHANNEL = channel_id;
     }
-    
+
     Some(stream_url.to_owned())
 }
-
 
 pub async fn update_channel_info(channel_id: &String) {
     let chn = resolve_channel(channel_id.as_ref()).await;
 
     let request_url = format!("https://api.reyfm.de/v4/channel?chn={}", chn.unwrap());
-    let response = reqwest::get(&request_url).await.unwrap().json::<serde_json::Value>().await.unwrap();
+    let response = reqwest::get(&request_url)
+        .await
+        .unwrap()
+        .json::<serde_json::Value>()
+        .await
+        .unwrap();
     let _channel_description = response["channel"]["description"].as_str().unwrap();
     let _channel_name = response["channel"]["name"].as_str().unwrap();
     let _stream_url = response["channel"]["stream_urls"]["high"].as_str().unwrap();
@@ -64,20 +75,18 @@ pub async fn update_channel_info(channel_id: &String) {
             //println!("no change detected!");
             return;
         } else {
-            // update 
+            // update
             NOW_PLAYING = format!("{} - {}", song_artist, song_title);
         }
     }
 
-
-
     let system_time = SystemTime::now();
     let datetime: DateTime<Utc> = system_time.into();
     println!(
-        "[{}] -> [REYFM #{}] \n {} - {}", 
-        datetime.format("%d/%m/%Y %T"), 
-        channel_id, 
-        song_artist, 
+        "[{}] -> [REYFM #{}] \n {} - {}",
+        datetime.format("%d/%m/%Y %T"),
+        channel_id,
+        song_artist,
         song_title
     );
     //discord::init_presence(song_title.to_owned(), song_artist.to_owned()).await;
