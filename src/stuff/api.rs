@@ -5,7 +5,7 @@ use std::time::SystemTime;
 
 use crate::stuff::discord;
 
-use crate::{CURRENT_CHANNEL, NOW_PLAYING};
+use crate::{CURRENT_CHANNEL, NOW_PLAYING, IS_LIVE_SHOW};
 
 pub async fn init_channel(channel_id: String) -> Option<String> {
     let chn = resolve_channel(&channel_id).await;
@@ -27,6 +27,11 @@ pub async fn init_channel(channel_id: String) -> Option<String> {
     let _stream_url = response["channel"]["stream_urls"]["high"].as_str().unwrap();
     let song_title = response["channel"]["now"]["title"].as_str().unwrap();
     let song_artist = response["channel"]["now"]["artist"].as_str().unwrap();
+
+    unsafe {
+        IS_LIVE_SHOW = response["channel"]["live"].as_bool().unwrap();
+    }
+
     // get the stream url
     let stream_url = response["channel"]["stream_urls"]["high"].as_str().unwrap();
     discord::init_presence(
@@ -69,6 +74,11 @@ pub async fn update_channel_info(channel_id: &String) {
     let song_title = response["channel"]["now"]["title"].as_str().unwrap();
     let song_artist = response["channel"]["now"]["artist"].as_str().unwrap();
     // get the stream url
+
+    unsafe {
+        IS_LIVE_SHOW = response["channel"]["live"].as_bool().unwrap();
+    }
+
 
     unsafe {
         if NOW_PLAYING == format!("{} - {}", song_artist, song_title) {

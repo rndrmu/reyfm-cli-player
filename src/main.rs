@@ -8,6 +8,7 @@ use stuff::discord;
 
 pub static mut NOW_PLAYING: String = String::new();
 pub static mut CURRENT_CHANNEL: String = String::new();
+pub static mut IS_LIVE_SHOW: bool = false;
 
 #[tokio::main]
 async fn main() -> Result<()> {
