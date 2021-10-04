@@ -61,10 +61,14 @@ pub async fn update_channel_info(channel_id: &String) {
 
     unsafe {
         if NOW_PLAYING == format!("{} - {}", song_artist, song_title) {
-            println!("no change detected!");
+            //println!("no change detected!");
             return;
+        } else {
+            // update 
+            NOW_PLAYING = format!("{} - {}", song_artist, song_title);
         }
     }
+
 
 
     let system_time = SystemTime::now();
